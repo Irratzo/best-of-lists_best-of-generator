@@ -645,11 +645,21 @@ def collect_projects_info(
     for project in tqdm(projects):
         project_info = Dict(project)
 
-        if project_info.name.lower() in unique_projects:
+        try:
+            project_name = project_info.name.lower()
+        except TypeError as err:
+            log.warn(f"TypError on Dict-mapped project_info name for project {project}, info {project_info}.")
+            try:
+                project_name = project["name"].lower()
+            except KeyError as err:
+                log.error(f"Project has no 'name' field. Abort. Project {project}, info {project_info}.")
+                raise err
+
+        if project_name in unique_projects:
             log.info("Project " + project_info.name + " is duplicated.")
             continue
-        unique_projects.add(project_info.name.lower())
 
+        unique_projects.add(project_name)
         github_integration.update_via_github(project_info)
 
         for package_manager in integrations.AVAILABLE_PACKAGE_MANAGER:
